@@ -244,6 +244,9 @@ class Metric:
     def evaluate_rule(self, game_name, annotation):
         results = self.record['rule'][game_name]
         accuracies = []
+        optimal_count = 0
+        suboptimal_count = 0
+        invalid_count = 0
         debug_data = []
         for i, result in enumerate(results):
             if result is None or 'raw' not in result:
@@ -251,35 +254,99 @@ class Metric:
                     'index': i,
                     'raw': None,
                     'parsed': None,
-                    'reason': 'No raw output provided'
+                    'reason': 'No raw output provided',
+                    'move_type': 'invalid'
                 })
                 accuracies.append(0)
+                invalid_count += 1
                 continue
+
             lmm_output = result['raw']
-            valid_movements = annotation['annotations'][i]['gt'][
-                'valid_movements']
+            gt = annotation['annotations'][i]['gt']
+
+            # Handle both old and new annotation formats
+            if 'all_valid_movements' in gt:
+                # New format with optimal/suboptimal distinction
+                valid_movements = gt['all_valid_movements']
+                optimal_move = gt.get('optimal_move', None)
+                suboptimal_moves = gt.get('suboptimal_moves', [])
+                explanation = gt.get('explanation', '')
+            else:
+                # Old format - all moves are equally valid
+                valid_movements = gt['valid_movements']
+                optimal_move = None
+                suboptimal_moves = []
+                explanation = ''
+
             parsed_move, reason = self.parse_rule(lmm_output, game_name)
-            entry = {'index': i, 'raw': lmm_output, 'parsed': parsed_move}
+            entry = {
+                'index': i,
+                'raw': lmm_output,
+                'parsed': parsed_move
+            }
+
             if reason:
                 entry['reason'] = reason
-            debug_data.append(entry)
+
             if parsed_move:
                 normalized_move = parsed_move.lower()
                 normalized_valid_movements = [
                     move.lower() for move in valid_movements
                 ]
-                accuracy = 1 if normalized_move in normalized_valid_movements else 0  # noqa
+
+                if normalized_move in normalized_valid_movements:
+                    # Check if it's optimal or suboptimal
+                    if optimal_move and normalized_move == optimal_move.lower():
+                        accuracy = 1.0  # Full score for optimal move
+                        entry['move_type'] = 'optimal'
+                        entry['explanation'] = explanation
+                        optimal_count += 1
+                    else:
+                        accuracy = 0  # No score for suboptimal move
+                        entry['move_type'] = 'suboptimal'
+                        if optimal_move:
+                            entry['optimal_move'] = optimal_move
+                            entry['explanation'] = explanation
+                        suboptimal_count += 1
+                else:
+                    accuracy = 0  # No score for invalid move
+                    entry['move_type'] = 'invalid'
+                    if optimal_move:
+                        entry['optimal_move'] = optimal_move
+                        entry['explanation'] = explanation
+                    invalid_count += 1
             else:
                 accuracy = 0
+                entry['move_type'] = 'invalid'
+                if optimal_move:
+                    entry['optimal_move'] = optimal_move
+                    entry['explanation'] = explanation
+                invalid_count += 1
+
+            debug_data.append(entry)
             accuracies.append(accuracy)
+
         if 'rule' not in self.debug_results:
             self.debug_results['rule'] = {}
         self.debug_results['rule'][game_name] = debug_data
+
         avg_score = round(sum(accuracies) /
                           len(accuracies), 3) if accuracies else 0
+
+        # Add summary statistics
+        total = len(results)
         if 'rule' not in self.scores:
             self.scores['rule'] = {}
-        self.scores['rule'][game_name] = avg_score
+        self.scores['rule'][game_name] = {
+            'average_score': avg_score,
+            'optimal_count': optimal_count,
+            'suboptimal_count': suboptimal_count,
+            'invalid_count': invalid_count,
+            'total': total,
+            'optimal_rate': round(optimal_count / total, 3) if total > 0 else 0,
+            'suboptimal_rate': round(suboptimal_count / total, 3) if total > 0 else 0,
+            'invalid_rate': round(invalid_count / total, 3) if total > 0 else 0
+        }
         return avg_score
 
     def evaluate_e2e(self, game_name):
@@ -348,6 +415,8 @@ class Metric:
                 task_abilities = self.TASK_ABILITIES.get(task, [])
                 weight = sum(
                     game_ratings.get(ability, 0) for ability in task_abilities)
+
+                # avg_score is already the numeric score (returned from evaluate methods)
                 weighted_score = avg_score * weight
                 total_weighted_score += weighted_score
                 total_weight += weight if weight > 0 else 1

@@ -37,12 +37,15 @@ game_description = dict(
         'Tic Tac Toe is played on a 3x3 grid. Players take turns placing X or '
         'O in the cells. The game starts with an empty board. The grid is '
         'labeled with rows A to C and columns 1 to 3. Each position can only '
-        'be occupied by one mark. Based on the board state, '
-        'please find an empty cell where you can place your next stone.\n'
+        'be occupied by one mark. Based on the current board state, '
+        'your task is to identify and choose the **optimal winning move** for your mark (X or O). '
+        'An optimal winning move is an empty cell where, if you place your mark, you will immediately achieve three-in-a-row and win the game.\n'
         'Please strictly follow the following format:\n'
         'Movement: <position>\n'
         'where the position can be any combination of rows A to C and columns '
-        '1 to 3, for example, A1, B2, or C3.'
+        '1 to 3, for example, A1, B2, or C3.\n'
+        '**If there is no optimal winning move available (i.e., no move can guarantee an immediate win), you must respond with:**\n'
+        'Movement: None'
     ),
     qa=(
         'Tic Tac Toe is a game played on a 3x3 grid where two players take '

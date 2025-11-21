@@ -127,7 +127,21 @@ class GameSimulator:
 
         rule_state = batch['gt']['rule_state']
         screenshot_path = batch['screenshot_path']
-        valid_movements = batch['gt']['valid_movements']
+
+        # Handle both old and new annotation formats
+        gt = batch['gt']
+        if 'all_valid_movements' in gt:
+            # New format with optimal/suboptimal moves
+            valid_movements = gt['all_valid_movements']
+            optimal_move = gt.get('optimal_move', None)
+            suboptimal_moves = gt.get('suboptimal_moves', [])
+            explanation = gt.get('explanation', '')
+        else:
+            # Old format
+            valid_movements = gt['valid_movements']
+            optimal_move = None
+            suboptimal_moves = []
+            explanation = ''
 
         prompt = self.game_cfg.game_description[self.task]
         try:
@@ -139,6 +153,10 @@ class GameSimulator:
         self.log(f'Game state: {rule_state}')
         self.log(f'LMM Output: {lmm_output}')
         self.log(f'Valid movements: {valid_movements}')
+        if optimal_move:
+            self.log(f'Optimal move: {optimal_move}')
+            self.log(f'Suboptimal moves: {suboptimal_moves}')
+            self.log(f'Explanation: {explanation}')
         return dict(raw=lmm_output)
 
     def qa(self, batch):
