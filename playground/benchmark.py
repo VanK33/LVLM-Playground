@@ -103,16 +103,34 @@ class Generator:
         annotations = []
         for i in range(self.sample_size):
             game = game_class(game_cfg)
-            rule_state, valid_movements = game.get_rule_state()
-            screenshot = game.get_screenshot()
-            screenshot.save(osp.join(save_path, f'{i:07d}.jpg'))
-            annotation = {
-                'file': f'{i:07d}.jpg',
-                'gt': {
-                    'rule_state': rule_state,
-                    'valid_movements': valid_movements
-                },
-            }
+
+            # Try to use optimal generation if available
+            if hasattr(game, 'get_rule_state_optimal'):
+                rule_state, optimal_move, suboptimal_moves, explanation = game.get_rule_state_optimal()
+                screenshot = game.get_screenshot()
+                screenshot.save(osp.join(save_path, f'{i:07d}.jpg'))
+                annotation = {
+                    'file': f'{i:07d}.jpg',
+                    'gt': {
+                        'rule_state': rule_state,
+                        'optimal_move': optimal_move,
+                        'suboptimal_moves': suboptimal_moves,
+                        'all_valid_movements': [optimal_move] + suboptimal_moves,
+                        'explanation': explanation
+                    },
+                }
+            else:
+                # Fallback to old method for other games
+                rule_state, valid_movements = game.get_rule_state()
+                screenshot = game.get_screenshot()
+                screenshot.save(osp.join(save_path, f'{i:07d}.jpg'))
+                annotation = {
+                    'file': f'{i:07d}.jpg',
+                    'gt': {
+                        'rule_state': rule_state,
+                        'valid_movements': valid_movements
+                    },
+                }
             annotations.append(annotation)
         with open(osp.join(save_path, 'annotation.json'),
                   'w',
@@ -122,4 +140,4 @@ class Generator:
                     'task': 'rule',
                     'game': game_cfg.game_name,
                     'annotations': annotations,
-                }, json_file)
+                }, json_file, indent=2)

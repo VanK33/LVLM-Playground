@@ -14,8 +14,8 @@ make_video = True
 # duplicate, preserve old for references
 benchmark_setting = dict(
     games=['tictactoe'],
-    sample_size=100,
+    sample_size=100,  # Generate 100 optimal rule-based test cases
     e2e_round=100,
-    offline_task=['perceive'],
+    offline_task=['rule'],  # Only generate rule-based tests with optimal moves
     benchmark_path='benchmark'
 )

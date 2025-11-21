@@ -127,6 +127,157 @@ class TicTacToeLogic(BaseGameLogic):
                     valid_movements.append(move_str)
             return board_state, valid_movements
 
+    def get_rule_state_optimal(self):
+        """
+        Generate a realistic board state with an optimal winning move.
+
+        Requirements:
+        1. Board simulates realistic gameplay (both players attempting to win)
+        2. X and O each have at most 3 pieces
+        3. There exists an optimal move that leads to immediate victory
+        4. There are suboptimal moves (other legal moves that don't win)
+
+        Returns:
+            board_state: 3x3 matrix representing the game state
+            optimal_move: The winning move (string like "A1")
+            suboptimal_moves: List of legal but non-winning moves
+            explanation: Why the optimal move wins
+        """
+        self.reset_board()
+        row_map = {0: 'A', 1: 'B', 2: 'C'}
+        col_map = {0: '1', 1: '2', 2: '3'}
+
+        # All winning patterns (row, col, diagonal)
+        win_patterns = [
+            (0, 1, 2),  # Row A
+            (3, 4, 5),  # Row B
+            (6, 7, 8),  # Row C
+            (0, 3, 6),  # Col 1
+            (1, 4, 7),  # Col 2
+            (2, 5, 8),  # Col 3
+            (0, 4, 8),  # Diagonal \
+            (2, 4, 6),  # Diagonal /
+        ]
+
+        max_attempts = 1000
+        for attempt in range(max_attempts):
+            self.reset_board()
+            positions = [-1] * 9
+
+            # Step 1: Choose a random winning pattern and attacker
+            winning_pattern = random.choice(win_patterns)
+            attacker = random.choice([1, 0])  # 1=X, 0=O
+            defender = 1 - attacker
+
+            # Step 2: Place 2 attacker pieces in the winning pattern, leave 1 empty
+            pattern_positions = list(winning_pattern)
+            random.shuffle(pattern_positions)
+            optimal_pos = pattern_positions[0]  # This will be the winning move
+            positions[pattern_positions[1]] = attacker
+            positions[pattern_positions[2]] = attacker
+
+            # Step 3: Place defender pieces (1-3 pieces) strategically
+            # Ensure defender doesn't have a winning threat
+            defender_count = random.randint(1, 3)
+            attacker_count = 2  # We already placed 2
+
+            # Adjust counts to follow game rules (X goes first, so X >= O)
+            if attacker == 0:  # If O is attacker
+                # O can only have same or one less than X
+                if defender_count < attacker_count:
+                    defender_count = attacker_count
+            else:  # If X is attacker
+                # X should have same or one more than O
+                if defender_count > attacker_count:
+                    defender_count = attacker_count
+
+            # Find empty positions (excluding optimal_pos)
+            available_positions = [i for i in range(9)
+                                 if positions[i] == -1 and i != optimal_pos]
+
+            if len(available_positions) < defender_count:
+                continue
+
+            # Place defender pieces, avoiding creating their own winning threat
+            placed_defender = 0
+            random.shuffle(available_positions)
+
+            for pos in available_positions:
+                if placed_defender >= defender_count:
+                    break
+
+                # Try placing defender here
+                positions[pos] = defender
+
+                # Check if this creates a winning threat for defender
+                defender_has_threat = False
+                for pattern in win_patterns:
+                    count = sum(1 for p in pattern if positions[p] == defender)
+                    empty = sum(1 for p in pattern if positions[p] == -1)
+                    if count == 2 and empty == 1:
+                        # Defender has a winning threat
+                        defender_has_threat = True
+                        break
+
+                if defender_has_threat:
+                    positions[pos] = -1  # Undo
+                else:
+                    placed_defender += 1
+
+            # Verify we placed enough defender pieces
+            if placed_defender < 1:  # Need at least 1 defender piece
+                continue
+
+            # Step 4: Verify there are suboptimal moves
+            empty_positions = [i for i in range(9) if positions[i] == -1]
+            if len(empty_positions) < 2:  # Need at least 2 empty (optimal + suboptimal)
+                continue
+
+            # Step 5: Build board and verify
+            for i, val in enumerate(positions):
+                if val == 1:
+                    self.board[i] = 'X'
+                elif val == 0:
+                    self.board[i] = 'O'
+
+            # Check game is not finished
+            self._check_winner()
+            if self.is_finish:
+                continue
+
+            # Step 6: Generate moves and explanation
+            board_state = [positions[i:i + 3] for i in range(0, 9, 3)]
+
+            optimal_r, optimal_c = divmod(optimal_pos, 3)
+            optimal_move = row_map[optimal_r] + col_map[optimal_c]
+
+            suboptimal_moves = []
+            for i in empty_positions:
+                if i != optimal_pos:
+                    r, c = divmod(i, 3)
+                    suboptimal_moves.append(row_map[r] + col_map[c])
+
+            # Generate explanation
+            attacker_symbol = 'X' if attacker == 1 else 'O'
+            pattern_names = {
+                (0, 1, 2): "row A",
+                (3, 4, 5): "row B",
+                (6, 7, 8): "row C",
+                (0, 3, 6): "column 1",
+                (1, 4, 7): "column 2",
+                (2, 5, 8): "column 3",
+                (0, 4, 8): "main diagonal",
+                (2, 4, 6): "anti-diagonal"
+            }
+            pattern_name = pattern_names.get(winning_pattern, "line")
+            explanation = f"Playing {optimal_move} completes {pattern_name} with three {attacker_symbol}'s, winning immediately."
+
+            return board_state, optimal_move, suboptimal_moves, explanation
+
+        # Fallback to old method if we couldn't generate optimal state
+        board_state, valid_movements = self.get_rule_state()
+        return board_state, valid_movements[0], valid_movements[1:], "No optimal strategy found."
+
     def calculate_score(self):
         """Calculate score based on steps taken and game outcome."""
         player_steps = len(self.moves_history)
@@ -221,6 +372,9 @@ class TicTacToe(BaseGame):
 
     def get_rule_state(self):
         return self.logic.get_rule_state()
+
+    def get_rule_state_optimal(self):
+        return self.logic.get_rule_state_optimal()
 
     def ai_move(self):
         if not self.AI_component or self.logic.is_finish:
