@@ -106,18 +106,33 @@ class Generator:
 
             # Try to use optimal generation if available
             if hasattr(game, 'get_rule_state_optimal'):
-                rule_state, optimal_move, suboptimal_moves, explanation = game.get_rule_state_optimal()
+                optimal_data = game.get_rule_state_optimal()
+                
+                # 2. dynamically unpacking to 4 or 5 values
+                current_turn = None # 默认值
+                if len(optimal_data) == 5:
+                    rule_state, optimal_move, suboptimal_moves, explanation, current_turn = optimal_data
+                else:
+                    # backward capatiable setting
+                    rule_state, optimal_move, suboptimal_moves, explanation = optimal_data
+
                 screenshot = game.get_screenshot()
                 screenshot.save(osp.join(save_path, f'{i:07d}.jpg'))
+                
+                gt_data = {
+                    'rule_state': rule_state,
+                    'optimal_move': optimal_move,
+                    'suboptimal_moves': suboptimal_moves,
+                    'all_valid_movements': [optimal_move] + suboptimal_moves,
+                    'explanation': explanation
+                }
+                
+                if current_turn:
+                    gt_data['current_turn'] = current_turn
+
                 annotation = {
                     'file': f'{i:07d}.jpg',
-                    'gt': {
-                        'rule_state': rule_state,
-                        'optimal_move': optimal_move,
-                        'suboptimal_moves': suboptimal_moves,
-                        'all_valid_movements': [optimal_move] + suboptimal_moves,
-                        'explanation': explanation
-                    },
+                    'gt': gt_data,
                 }
             else:
                 # Fallback to old method for other games
@@ -132,6 +147,7 @@ class Generator:
                     },
                 }
             annotations.append(annotation)
+            
         with open(osp.join(save_path, 'annotation.json'),
                   'w',
                   encoding='utf-8') as json_file:

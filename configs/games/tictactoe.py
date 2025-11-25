@@ -34,18 +34,13 @@ game_description = dict(
         'Game State: [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]\n'
         'represents an empty board.'),
     rule=(
-        'Tic Tac Toe is played on a 3x3 grid. Players take turns placing X or '
-        'O in the cells. The game starts with an empty board. The grid is '
-        'labeled with rows A to C and columns 1 to 3. Each position can only '
-        'be occupied by one mark. Based on the current board state, '
-        'your task is to identify and choose the **optimal winning move** for your mark (X or O). '
-        'An optimal winning move is an empty cell where, if you place your mark, you will immediately achieve three-in-a-row and win the game.\n'
-        'Please strictly follow the following format:\n'
-        'Movement: <position>\n'
-        'where the position can be any combination of rows A to C and columns '
-        '1 to 3, for example, A1, B2, or C3.\n'
-        '**If there is no optimal winning move available (i.e., no move can guarantee an immediate win), you must respond with:**\n'
-        'Movement: None'
+        "Tic Tac Toe is played on a 3x3 grid. The image shows the current board, and your mark (X or O) is at the top.\n\n"
+        "Your task is to identify and choose the **optimal winning move** for your mark.\n\n"
+        "**CRITICAL OUTPUT RULES:**\n"
+        "1. You MAY use <think> tags to reason, but keep it brief.\n"
+        "2. After reasoning, output the final answer immediately.\n"
+        "3. **Format:** 'Movement: <position>' (e.g., A1, B2) or 'Movement: None'.\n"
+        "4. **STOP GENERATING** immediately after the answer line. Do NOT provide explanations, lists of moves, or summaries.\n"
     ),
     qa=(
         'Tic Tac Toe is a game played on a 3x3 grid where two players take '

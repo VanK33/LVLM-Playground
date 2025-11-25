@@ -271,6 +271,10 @@ class TicTacToeLogic(BaseGameLogic):
                     suboptimal_moves.append(row_map[r] + col_map[c])
             
             attacker_name = attacker_symbol # 'X' or 'O'
+
+            self.opponent = attacker_name
+            self.bot = 'O' if attacker_name == 'X' else 'X'
+            
             explanation = f"{attacker_name} plays {optimal_move} to win immediately."
             
             # Return attacker_name as the 5th element

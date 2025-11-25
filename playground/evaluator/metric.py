@@ -40,7 +40,7 @@ class Metric:
     }
 
     RULE_FORMATS = {
-        'tictactoe': r'(?:Movement:\s*)?([A-Ca-c][1-3]|[1-3][A-Ca-c])',
+        'tictactoe': r'Movement:\s*([A-Ca-c][1-3]|[1-3][A-Ca-c])',
         'sudoku': r'(?:Movement:\s*)?([A-Ia-i][1-9]\s[1-9])',
         'chess':
         r'(?:Movement:\s*)?([a-hA-H][1-8][a-hA-H][1-8]|[a-hA-H][1-8]|O-O|O-O-O|(?:N|B|R|Q|K)?[a-hA-H]?[1-8]?x?[a-hA-H][1-8](?:=[QRNB])?|(?:N|B|R|Q|K)[a-hA-H][1-8])',  # noqa
