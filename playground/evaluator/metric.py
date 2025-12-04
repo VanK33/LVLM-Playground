@@ -109,50 +109,46 @@ class Metric:
         if not lmm_output:
             return None, "No output provided"
 
-        # 1. 锁定搜索区域：如果有 "Game State:"，只看后面的部分
         target_content = lmm_output
         if "Game State:" in lmm_output:
             target_content = lmm_output.split("Game State:")[-1]
 
-        # 2. 定义增强的正则表达式
-        # r'(\[\s*\[.*?\]\s*\])'
-        # \[    : 匹配最外层的左括号
-        # \s* : 允许中间有任意空白（包括换行符 \n, 空格）<-- 关键修改
-        # \[    : 匹配内层的左括号（第一行的开始）
-        # .*?   : 非贪婪匹配中间的所有内容
-        # \]    : 匹配内层的右括号（最后一行的结束）
-        # \s* : 允许中间有任意空白
-        # \]    : 匹配最外层的右括号
-        matrix_pattern = r'(\[\s*\[.*?\]\s*\])'
+        python_pattern = r'(\[\s*\[.*?\]\s*\])'
+        latex_pattern = r'(\\begin\{bmatrix\}.*?\\end\{bmatrix\})'
         
-        # 3. 在目标区域搜索
-        matches = re.findall(matrix_pattern, target_content, re.DOTALL)
+        combined_pattern = f"{python_pattern}|{latex_pattern}"
+        
+        iterator = re.finditer(combined_pattern, target_content, re.DOTALL)
+        matches = [m.group(0) for m in iterator]
 
-        # 4. 兜底：如果 Game State 后没找到，全文搜一遍
         if not matches and target_content != lmm_output:
-            matches = re.findall(matrix_pattern, lmm_output, re.DOTALL)
+            iterator = re.finditer(combined_pattern, lmm_output, re.DOTALL)
+            matches = [m.group(0) for m in iterator]
         
         if not matches:
-            return None, "No matrix pattern [[...]] found (checked multiline python format)"
+            return None, "No matrix pattern found"
+        valid_matches = [m for m in matches if "int(" not in m and "board[" not in m]
+        
+        if not valid_matches:
+            return None, "Only code logic found, no concrete data matrix"
+        final_matrix_str = valid_matches[-1]
 
-        # 5. 取最后一个匹配项 (Last One Wins)
-        final_matrix_str = matches[-1]
 
-        # 6. 提取数字 (这一步很强大，它会忽略掉所有的括号、逗号、换行符，只抓取数字)
-        numbers = re.findall(r'-?\d+', final_matrix_str)
+        clean_str = final_matrix_str.replace("'", "").replace('"', "")
+        clean_str = clean_str.replace("X", "1").replace("x", "1")
+        clean_str = clean_str.replace("O", "0").replace("o", "0")
+
+        numbers = re.findall(r'-?\d+', clean_str)
         
         config = self.MATRIX_CONFIG.get(game_name)
         if not config:
             return None, f"Unknown game config: {game_name}"
             
-        # 7. 校验数量
         if len(numbers) != config['count']:
             return None, f"Number count mismatch: expected {config['count']}, got {len(numbers)}. Parsed string: {final_matrix_str}"
 
         try:
             matrix_flat = [int(num) for num in numbers]
-            
-            # 校验数值范围
             if not all(num in config['valid_range'] for num in matrix_flat):
                  return None, f"Numbers out of range {config['valid_range']}"
 
