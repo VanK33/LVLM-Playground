@@ -92,30 +92,66 @@ class GameSimulator:
                 'No game instance. Call new_game() to start a new game.')
         return self.game_instance.get_game_status()
 
+    # def perceive(self, batch):
+    #     """Run the game simulation in perception mode."""
+    #     if not self.agent:
+    #         raise ValueError('No agent set. Call set_agent() to set an agent.')
+
+    #     if self.game_instance is None:
+    #         self.new_game()
+
+    #     prompt = self.game_cfg.game_description[self.task]
+    #     screenshot_path = batch['screenshot_path']
+    #     gt = batch['gt']
+
+    #     if screenshot_path:
+    #         try:
+    #             lmm_output = self.agent.get_decision(screenshot_path, prompt)
+    #         except Exception as e:
+    #             lmm_output = None
+    #             self.log(f'Failed to get decision from LMM: {e}')
+
+    #         self.log(f'LMM Output: {lmm_output}')
+    #         self.log(f'Ground truth: {gt}')
+    #         return dict(raw=lmm_output)
+    #     else:
+    #         raise ValueError('Failed to get screenshot.')
+
+
+
+    # in context learning version
     def perceive(self, batch):
         """Run the game simulation in perception mode."""
         if not self.agent:
             raise ValueError('No agent set. Call set_agent() to set an agent.')
-
         if self.game_instance is None:
             self.new_game()
-
+        
         prompt = self.game_cfg.game_description[self.task]
-        screenshot_path = batch['screenshot_path']
+        test_image_path = batch['screenshot_path']
+        example_image_path = 'example_image/0000100.jpg'
         gt = batch['gt']
+        
 
-        if screenshot_path:
+        # Check which path is missing
+        if not example_image_path:
+            raise ValueError('Failed to get example image path from batch.')
+        if not test_image_path:
+            raise ValueError('Failed to get test image path.')
+
+        if example_image_path and test_image_path:
             try:
-                lmm_output = self.agent.get_decision(screenshot_path, prompt)
+                print("example_image_path:", example_image_path)
+                print("test_image_path:", test_image_path)
+                lmm_output = self.agent.get_decision(example_image_path, test_image_path, prompt)
             except Exception as e:
                 lmm_output = None
                 self.log(f'Failed to get decision from LMM: {e}')
-
             self.log(f'LMM Output: {lmm_output}')
             self.log(f'Ground truth: {gt}')
             return dict(raw=lmm_output)
         else:
-            raise ValueError('Failed to get screenshot.')
+            raise ValueError('Failed to get example or test image paths.')   
 
     def rule(self, batch):
         """Run the game simulation in rule mode"""

@@ -165,6 +165,6 @@ helpers
 experiments
 archival_experiment_results
 rebuttal-exp
-benchmark/
+#benchmark/
 evaluation_results
 .vscode

@@ -118,9 +118,25 @@ class LMDeployAgentSingleStep(BaseAgent):
             backend_config=agent_cfg.lmm_agent.backend_config)
         self.gen_config = agent_cfg.lmm_agent.general_config
 
-    def get_decision(self, screenshot_path: str, prompt: str):
-        image = load_image(screenshot_path)
+    # def get_decision(self, screenshot_path: str, prompt: str):
+    #     image = load_image(screenshot_path)
+    #     if self.is_deepseek_vl:
+    #         prompt = '<IMAGE_TOKEN>' + prompt
+    #     outputs = self.model((prompt, image), gen_config=self.gen_config)
+    #     return outputs.text
+
+
+    ## in context learning version
+    def get_decision(self, example_image_path: str, test_image_path: str, prompt: str):
+        example_image = load_image(example_image_path)
+        test_image = load_image(test_image_path)
+        
         if self.is_deepseek_vl:
-            prompt = '<IMAGE_TOKEN>' + prompt
-        outputs = self.model((prompt, image), gen_config=self.gen_config)
-        return outputs.text
+            # You can customize the prompt structure
+            prompt = f'<IMAGE_TOKEN>Example: \n\n<IMAGE_TOKEN>Test: \n\n{prompt}'
+            images = [example_image, test_image]
+        else:
+            images = [example_image, test_image]
+        
+        outputs = self.model((prompt, images), gen_config=self.gen_config)
+        return outputs.text 
