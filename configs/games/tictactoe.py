@@ -72,29 +72,49 @@ game_description = dict(
 #         'Game State: <boardmatrix>\n'
 #         'where <boardmatrix> is a 3x3 matrix representing the second image only.'),
 
-      # in context learning with chain of thought
+      # # in context learning with chain of thought
+      # perceive=(
+      #       'Tic Tac Toe is a game played on a 3x3 grid where players take turns '
+      #       'placing X or O in the cells. Your task is to determine the current game state '
+      #       'using a 3x3 matrix where:\n'
+      #       '- Empty cell = -1\n'
+      #       '- X = 1\n'
+      #       '- O = 0\n\n'
+            
+      #       '=== EXAMPLE ===\n'
+      #       'Image 1 Analysis:\n'
+      #       'Row 1: [O, Empty, Empty] -> [0, -1, -1]\n'
+      #       'Row 2: [O, X, X] -> [0, 1, 1]\n'
+      #       'Row 3: [O, X, Empty] -> [0, 1, -1]\n'
+      #       'Game State: [[0, -1, -1], [0, 1, 1], [0, 1, -1]]\n\n'
+            
+      #       '=== YOUR TASK ===\n'
+      #       'Now, analyze the second image (the test board).\n'
+      #       'Step 1: List the content of each row (X, O, or Empty).\n'
+      #       'Step 2: Convert to the matrix format.\n\n'
+      #       'Output the final matrix at the end in this format:\n'
+      #       'Game State: <boardmatrix>'
+      #   ),
+
+
+# ict v2
       perceive=(
-            'Tic Tac Toe is a game played on a 3x3 grid where players take turns '
-            'placing X or O in the cells. Your task is to determine the current game state '
-            'using a 3x3 matrix where:\n'
-            '- Empty cell = -1\n'
-            '- X = 1\n'
-            '- O = 0\n\n'
-            
-            '=== EXAMPLE ===\n'
-            'Image 1 Analysis:\n'
-            'Row 1: [O, Empty, Empty] -> [0, -1, -1]\n'
-            'Row 2: [O, X, X] -> [0, 1, 1]\n'
-            'Row 3: [O, X, Empty] -> [0, 1, -1]\n'
-            'Game State: [[0, -1, -1], [0, 1, 1], [0, 1, -1]]\n\n'
-            
-            '=== YOUR TASK ===\n'
-            'Now, analyze the second image (the test board).\n'
-            'Step 1: List the content of each row (X, O, or Empty).\n'
-            'Step 2: Convert to the matrix format.\n\n'
-            'Output the final matrix at the end in this format:\n'
-            'Game State: <boardmatrix>'
-        ),
+        'Tic Tac Toe is a game played on a 3x3 grid where players take turns '
+        'placing X or O in the cells. Given a screenshot of the game board, '
+        'please determine the current game state using a 3x3 matrix. In this '
+        'matrix, an empty cell should be represented by -1, X should be '
+        'represented by 1, and O should be represented by 0. Please strictly '
+        'follow the format:\n'
+        'Game State: <boardmatrix>\n'
+        'where <boardmatrix> is a 3x3 matrix. For example,\n'
+        'Game State: [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]\n'
+        'represents an empty board.'
+        'Now here is an example\n'
+        'The first image shows an example Tic Tac Toe board. '
+        'The correct game state for this example board is:\n'
+        'Game State: [[0, -1, -1], [0, 1, 1], [0, 1, -1]]\n\n'
+        'Now, analyze the second image (the test board). '),
+
     rule=(
         'Tic Tac Toe is played on a 3x3 grid. Players take turns placing X or '
         'O in the cells. The game starts with an empty board. The grid is '
